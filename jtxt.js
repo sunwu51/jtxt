@@ -8,7 +8,7 @@ const { promisify } = require('util');
 
 // 定义命令行选项
 program
-  .version('1.0.0')
+  .version('0.1.8')
   .argument('<logic>', '处理逻辑的 JavaScript 代码')
   .argument('[filename]', '要读取的文件名', null)
   .option('-b, --begin <code>', '初始化的逻辑代码')
