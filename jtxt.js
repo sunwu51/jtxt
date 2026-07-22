@@ -3,6 +3,8 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 const { program } = require('commander');
+const { exec: cpExec, execSync: cpExecSync } = require('child_process');
+const { promisify } = require('util');
 
 // 定义命令行选项
 program
@@ -18,13 +20,16 @@ const options = program.opts();
 const logic = program.args[0];
 const filename = program.args[1];
 
-var beginFunc = function(){}, endFunc = function(){}, 
-    processFunc = new Function('l', 'ctx', 'print', logic);
+// 使用 AsyncFunction 构造器，支持在 logic 中使用 await
+const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
+
+var beginFunc = async function(){}, endFunc = async function(){},
+    processFunc = new AsyncFunction('l', 'ctx', 'print', 'exec', 'execSync', logic);
 if (options.begin) {
-    beginFunc = new Function('ctx', 'print', options.begin);
+    beginFunc = new AsyncFunction('ctx', 'print', 'exec', 'execSync', options.begin);
 }
 if (options.end) {
-    endFunc = new Function('ctx', 'print', options.end);
+    endFunc = new AsyncFunction('ctx', 'print', 'exec', 'execSync', options.end);
 }
 
 // 预定义全局变量
@@ -33,26 +38,30 @@ var ctx = {
 };
 var print = console.log;
 
-// 处理文件或标准输入
-const processStream = (stream) => {
-  beginFunc(ctx, print);
+// 注入给 logic 的 shell 执行能力，返回 stdout 字符串（去掉末尾换行）
+// exec 为异步版本（需 await），execSync 为同步版本；命令非零退出会抛错
+const execP = promisify(cpExec);
+const exec = async (cmd) => (await execP(cmd, { encoding: 'utf8' })).stdout.replace(/\r?\n$/, '');
+const execSync = (cmd) => cpExecSync(cmd, { encoding: 'utf8' }).replace(/\r?\n$/, '');
+
+// 处理文件或标准输入，逐行串行 await，保证 end 在所有行处理完成后才执行
+const processStream = async (stream) => {
+  await beginFunc(ctx, print, exec, execSync);
   const rl = readline.createInterface({
     input: stream,
     crlfDelay: Infinity // 适用于 \r\n 和 \n 换行符
   });
 
-  rl.on('line', (line) => {
+  for await (const line of rl) {
     try {
-        processFunc(line, ctx, print);
+        await processFunc(line, ctx, print, exec, execSync);
     } catch (error) {
         console.error('Error processing line:', error);
     }
-  });
+  }
 
-  rl.on('close', () => {
-    // 执行结束逻辑
-    endFunc(ctx, print);
-  });
+  // 执行结束逻辑
+  await endFunc(ctx, print, exec, execSync);
 };
 
 // 判断处理文件还是标准输入

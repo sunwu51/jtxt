@@ -1,6 +1,6 @@
 {
   "name": "jtxt",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "A CLI tool like awk but using js grammar instead",
   "bin": {
     "jtxt": "jtxt.js"
