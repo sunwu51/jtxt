@@ -1,6 +1,6 @@
 ---
 name: jtxt
-description: A line-oriented text processing CLI that uses JavaScript syntax (an awk alternative). Use it to filter, transform, or aggregate logs/text files, or to run arbitrary per-line JS logic with await support (fetch, shell commands, etc.). Triggers: text processing, log analysis, awk replacement, line-by-line processing, aggregation, jtxt. For plain search/matching without custom logic, prefer rg/grep.
+description: "A line-oriented text processing CLI that uses JavaScript syntax (an awk alternative). Use it to filter, transform, or aggregate logs/text files, or to run arbitrary per-line JS logic with await support (fetch, shell commands, etc.). Triggers: text processing, log analysis, awk replacement, line-by-line processing, aggregation, jtxt. For plain search/matching without custom logic, prefer rg/grep."
 ---
 
 # jtxt
